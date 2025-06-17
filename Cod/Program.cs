@@ -3,25 +3,38 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CriptografiaConsole
+namespace CriptografiaDiv3Correta
 {
     class Program
     {
-        static Dictionary<char, int[]> mapaCriptografia = new Dictionary<char, int[]>()
+        static Dictionary<char, char> mapaSubstituicao = new Dictionary<char, char>()
         {
-            {'A', new int[]{10}}, {'B', new int[]{52}}, {'C', new int[]{93}}, {'D', new int[]{49}}, {'E', new int[]{54}},
-            {'F', new int[]{259}}, {'G', new int[]{825}}, {'H', new int[]{61}}, {'I', new int[]{47}},
-            {'J', new int[]{333}}, {'K', new int[]{347}}, {'L', new int[]{482}}, {'M', new int[]{29}}, {'N', new int[]{31}},
-            {'O', new int[]{96}}, {'P', new int[]{231}}, {'Q', new int[]{799}}, {'R', new int[]{568}},
-            {'S', new int[]{178}}, {'T', new int[]{873}}, {'U', new int[]{993}}, {'V', new int[]{22}},
-            {'W', new int[]{76}}, {'X', new int[]{37}}, {'Y', new int[]{64}}, {'Z', new int[]{17}},
-            {' ', new int[]{973, 555, 888}}
+            {'A', 'Q'}, {'B', 'W'}, {'C', 'E'}, {'D', 'R'}, {'E', 'T'},
+            {'F', 'Y'}, {'G', 'U'}, {'H', 'I'}, {'I', 'O'}, {'J', 'P'},
+            {'K', 'A'}, {'L', 'S'}, {'M', 'D'}, {'N', 'F'}, {'O', 'G'},
+            {'P', 'H'}, {'Q', 'J'}, {'R', 'K'}, {'S', 'L'}, {'T', 'Z'},
+            {'U', 'X'}, {'V', 'C'}, {'W', 'V'}, {'X', 'B'}, {'Y', 'N'},
+            {'Z', 'M'}, {' ', '_'}
         };
 
-        static decimal chaveSecreta = 123.456m;
-        static long chaveXOR = 987654321;
-        static int tamanhoBloco = 13;
-        static Random random = new Random();
+        static Dictionary<char, int> mapaCharParaNumero = new Dictionary<char, int>()
+        {
+            {'Q', 10}, {'W', 11}, {'E', 12}, {'R', 13}, {'T', 14},
+            {'Y', 15}, {'U', 16}, {'I', 17}, {'O', 18}, {'P', 19},
+            {'A', 20}, {'S', 21}, {'D', 22}, {'F', 23}, {'G', 24},
+            {'H', 25}, {'J', 26}, {'K', 27}, {'L', 28}, {'Z', 29},
+            {'X', 30}, {'C', 31}, {'V', 32}, {'B', 33}, {'N', 34},
+            {'M', 35}, {'_', 36}
+        };
+
+        static Dictionary<int, char> mapaNumeroParaChar = mapaCharParaNumero.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
+
+        static int[] ordemTransposicao = { 2, 0, 3, 1 };
+
+        static int chave = 13;
+
+        // Usamos módulo primo para garantir inversos
+        static int mod = 997;
 
         static void Main(string[] args)
         {
@@ -32,8 +45,7 @@ namespace CriptografiaConsole
             Console.WriteLine($"\nTexto Criptografado:\n{textoCriptografado}");
 
             string textoDescriptografado = Descriptografar(textoCriptografado);
-
-            Console.WriteLine($"\n🔓 SENHA DESCOBERTA: {textoDescriptografado}");
+            Console.WriteLine($"\nTexto Descriptografado:\n{textoDescriptografado}");
 
             Console.WriteLine("\nPressione qualquer tecla para sair...");
             Console.ReadKey();
@@ -41,167 +53,195 @@ namespace CriptografiaConsole
 
         static string Criptografar(string texto)
         {
-            StringBuilder resultadoFinal = new StringBuilder();
-
+            // Substituição
+            StringBuilder substituido = new StringBuilder();
             foreach (char c in texto)
             {
-                if (!mapaCriptografia.ContainsKey(c))
-                {
-                    resultadoFinal.Append(new string('9', tamanhoBloco));
-                    continue;
-                }
-
-                if (c == ' ')
-                {
-                    int[] valoresEspaco = mapaCriptografia[c];
-                    int valor = valoresEspaco[random.Next(valoresEspaco.Length)];
-
-                    int aleatorio = random.Next(0, 1000);
-
-                    decimal calc = ((valor + chaveSecreta) * (1000 + aleatorio)) + 5555m;
-                    long resultadoCriptografado = (long)Math.Round(calc);
-                    resultadoCriptografado ^= chaveXOR;
-
-                    string aleatorioStr = aleatorio.ToString().PadLeft(3, '0');
-                    string resultadoStr = resultadoCriptografado.ToString().PadLeft(tamanhoBloco - 3, '0');
-
-                    resultadoFinal.Append(aleatorioStr + resultadoStr);
-                }
+                if (mapaSubstituicao.ContainsKey(c))
+                    substituido.Append(mapaSubstituicao[c]);
                 else
-                {
-                    int valor = mapaCriptografia[c][0];
-
-                    decimal passo1 = (valor * 483m) + chaveSecreta;
-                    decimal passo2 = passo1 * passo1;
-                    decimal passo3 = passo2 + 312;
-                    decimal passo4 = passo3 / 67m;
-                    decimal passo5 = (decimal)Math.Sqrt((double)passo4);
-                    decimal passo6 = passo5 * 32;
-                    decimal passo7 = passo6 + 157;
-                    decimal passo8 = passo7 / 3m;
-                    decimal passo9 = passo8 * 11;
-                    decimal passo10 = passo9 - 812;
-                    decimal passo11 = passo10 * passo10;
-                    decimal passo12 = passo11 / 97m;
-                    decimal passo13 = passo12 + 589;
-                    decimal passo14 = passo13 * 1.7m;
-
-                    long resultadoCriptografado = (long)Math.Round(passo14);
-                    resultadoCriptografado ^= chaveXOR;
-
-                    string numeroStr = resultadoCriptografado.ToString().PadLeft(tamanhoBloco, '0');
-                    resultadoFinal.Append(numeroStr);
-                }
+                    substituido.Append(c);
             }
 
-            return resultadoFinal.ToString();
+            // Transposição
+            string textoTransposto = Transpor(substituido.ToString(), ordemTransposicao);
+
+            // Converter para números e aplicar operações
+            StringBuilder resultadoNumerico = new StringBuilder();
+            foreach (char c in textoTransposto)
+            {
+                if (mapaCharParaNumero.ContainsKey(c))
+                {
+                    int numero = mapaCharParaNumero[c];
+                    int numeroCripto;
+
+                    if (numero % 3 == 0)
+                        numeroCripto = OperacoesDiv3(numero, chave);
+                    else
+                        numeroCripto = OperacoesNaoDiv3(numero, chave);
+
+                    resultadoNumerico.Append(numeroCripto.ToString("D3"));
+                }
+                else
+                    resultadoNumerico.Append("000");
+            }
+
+            return resultadoNumerico.ToString();
         }
 
-        static string Descriptografar(string textoCriptografado)
+        static string Descriptografar(string textoNumerico)
         {
-            Dictionary<int, char> mapaDescriptografia = new Dictionary<int, char>();
-            foreach (var kvp in mapaCriptografia)
-                foreach (var val in kvp.Value)
-                    if (!mapaDescriptografia.ContainsKey(val))
-                        mapaDescriptografia.Add(val, kvp.Key);
+            List<char> chars = new List<char>();
 
-            StringBuilder textoOriginal = new StringBuilder();
-
-            if (textoCriptografado.Length % tamanhoBloco != 0)
-                return "Texto criptografado inválido (tamanho incorreto).";
-
-            for (int i = 0; i < textoCriptografado.Length; i += tamanhoBloco)
+            for (int i = 0; i < textoNumerico.Length; i += 3)
             {
-                string bloco = textoCriptografado.Substring(i, tamanhoBloco);
-
-                if (bloco.All(c => c == '9'))
+                string numStr = textoNumerico.Substring(i, 3);
+                if (int.TryParse(numStr, out int num))
                 {
-                    textoOriginal.Append('?');
-                    continue;
-                }
+                    // Testa ambas as reversões
+                    int tentativaDiv3 = ReverterOperacoesDiv3(num, chave);
+                    int tentativaNaoDiv3 = ReverterOperacoesNaoDiv3(num, chave);
 
-                if (bloco.Substring(0, 3).All(char.IsDigit) && bloco.Substring(3).All(char.IsDigit))
-                {
-                    int aleatorio = int.Parse(bloco.Substring(0, 3));
-                    string parteValor = bloco.Substring(3);
+                    bool div3Valido = mapaNumeroParaChar.ContainsKey(tentativaDiv3) && (tentativaDiv3 % 3 == 0);
+                    bool naoDiv3Valido = mapaNumeroParaChar.ContainsKey(tentativaNaoDiv3) && (tentativaNaoDiv3 % 3 != 0);
 
-                    if (!long.TryParse(parteValor, out long valorXOR))
-                    {
-                        textoOriginal.Append('?');
-                        continue;
-                    }
-
-                    long valorCriptoOriginal = valorXOR ^ chaveXOR;
-
-                    decimal calc = valorCriptoOriginal;
-                    decimal valor = (calc - 5555m) / (1000 + aleatorio) - chaveSecreta;
-
-                    bool encontrouEspaco = false;
-                    foreach (int valEspaco in mapaCriptografia[' '])
-                    {
-                        if (Math.Abs(valor - valEspaco) < 2)
-                        {
-                            textoOriginal.Append(' ');
-                            encontrouEspaco = true;
-                            break;
-                        }
-                    }
-
-                    if (!encontrouEspaco)
-                        textoOriginal.Append('?');
-
-                    continue;
+                    if (div3Valido)
+                        chars.Add(mapaNumeroParaChar[tentativaDiv3]);
+                    else if (naoDiv3Valido)
+                        chars.Add(mapaNumeroParaChar[tentativaNaoDiv3]);
+                    else
+                        chars.Add('?');
                 }
                 else
                 {
-                    if (!long.TryParse(bloco, out long valorXOR))
-                    {
-                        textoOriginal.Append('?');
-                        continue;
-                    }
-
-                    long valorCriptoOriginal = valorXOR ^ chaveXOR;
-
-                    decimal passo14 = valorCriptoOriginal;
-                    decimal passo13 = passo14 / 1.7m - 589;
-                    decimal passo12 = passo13 * 97m;
-                    if (passo12 < 0) { textoOriginal.Append('?'); continue; }
-                    decimal passo11 = (decimal)Math.Sqrt((double)passo12);
-                    decimal passo10 = passo11 + 812;
-                    decimal passo9 = passo10 / 11m;
-                    decimal passo8 = passo9 * 3m;
-                    decimal passo7 = passo8 - 157;
-                    decimal passo6 = passo7 / 32m;
-                    if (passo6 < 0) { textoOriginal.Append('?'); continue; }
-                    decimal passo5 = passo6 * passo6;
-                    decimal passo4 = passo5 * 67m;
-                    decimal passo3 = passo4 - 312;
-                    if (passo3 < 0) { textoOriginal.Append('?'); continue; }
-                    decimal passo2 = (decimal)Math.Sqrt((double)passo3);
-                    decimal passo1 = (passo2 - chaveSecreta) / 483m;
-
-                    decimal valorDecimal = passo1;
-                    int valorInt = (int)Math.Round(valorDecimal);
-
-                    int valorUsado = valorInt;
-
-                    if (!mapaDescriptografia.ContainsKey(valorInt))
-                    {
-                        int chaveMaisProxima = mapaDescriptografia.Keys.OrderBy(k => Math.Abs(k - valorInt)).First();
-                        if (Math.Abs(chaveMaisProxima - valorInt) <= 3)
-                            valorUsado = chaveMaisProxima;
-                        else
-                        {
-                            textoOriginal.Append('?');
-                            continue;
-                        }
-                    }
-
-                    textoOriginal.Append(mapaDescriptografia[valorUsado]);
+                    chars.Add('?');
                 }
             }
 
-            return textoOriginal.ToString();
+            string textoTransposto = new string(chars.ToArray());
+            string textoDestransposto = Destranspor(textoTransposto, ordemTransposicao);
+
+            // Inversa da substituição
+            Dictionary<char, char> mapaInverso = mapaSubstituicao.ToDictionary(kvp => kvp.Value, kvp => kvp.Key);
+
+            StringBuilder resultadoOriginal = new StringBuilder();
+            foreach (char c in textoDestransposto)
+            {
+                if (mapaInverso.ContainsKey(c))
+                    resultadoOriginal.Append(mapaInverso[c]);
+                else if (c == '_')
+                    resultadoOriginal.Append(' ');
+                else
+                    resultadoOriginal.Append(c);
+            }
+
+            return resultadoOriginal.ToString();
+        }
+
+        // Operações para números divisíveis por 3
+        static int OperacoesDiv3(int num, int chave)
+        {
+            int val = num;
+            val = (val + chave) % mod;
+            val = (val * 3) % mod;
+            val = (val - chave + mod) % mod;
+            val = (val + 7) % mod;
+            val = (val * 2) % mod;
+            return val;
+        }
+
+        static int ReverterOperacoesDiv3(int num, int chave)
+        {
+            int val = num;
+            val = (val * MultiplicativoInverso(2, mod)) % mod;   // inverso de *2
+            val = (val - 7 + mod) % mod;
+            val = (val + chave) % mod;
+            val = (val * MultiplicativoInverso(3, mod)) % mod;   // inverso de *3
+            val = (val - chave + mod) % mod;
+            return val;
+        }
+
+        // Operações para números não divisíveis por 3
+        static int OperacoesNaoDiv3(int num, int chave)
+        {
+            int val = num;
+            val = (val * 7) % mod;
+            val = (val + chave) % mod;
+            val = (val - 9 + mod) % mod;
+            val = (val * 4) % mod;
+            val = (val + 1) % mod;
+            return val;
+        }
+
+        static int ReverterOperacoesNaoDiv3(int num, int chave)
+        {
+            int val = num;
+            val = (val - 1 + mod) % mod;
+            val = (val * MultiplicativoInverso(4, mod)) % mod;
+            val = (val + 9) % mod;
+            val = (val - chave + mod) % mod;
+            val = (val * MultiplicativoInverso(7, mod)) % mod;
+            return val;
+        }
+
+        // Função para calcular inverso multiplicativo mod m
+        static int MultiplicativoInverso(int a, int m)
+        {
+            int m0 = m, t, q;
+            int x0 = 0, x1 = 1;
+
+            if (m == 1)
+                return 0;
+
+            while (a > 1)
+            {
+                q = a / m;
+                t = m;
+                m = a % m; a = t;
+                t = x0;
+                x0 = x1 - q * x0;
+                x1 = t;
+            }
+
+            if (x1 < 0)
+                x1 += m0;
+
+            return x1;
+        }
+
+        static string Transpor(string texto, int[] ordem)
+        {
+            if (texto.Length % ordem.Length != 0)
+                texto = texto.PadRight(((texto.Length / ordem.Length) + 1) * ordem.Length, '_');
+
+            StringBuilder resultado = new StringBuilder();
+
+            for (int i = 0; i < texto.Length; i += ordem.Length)
+            {
+                char[] bloco = new char[ordem.Length];
+                for (int j = 0; j < ordem.Length; j++)
+                    bloco[j] = texto[i + ordem[j]];
+
+                resultado.Append(new string(bloco));
+            }
+
+            return resultado.ToString();
+        }
+
+        static string Destranspor(string texto, int[] ordem)
+        {
+            if (texto.Length % ordem.Length != 0)
+                return texto;
+
+            char[] resultado = new char[texto.Length];
+
+            for (int i = 0; i < texto.Length; i += ordem.Length)
+            {
+                for (int j = 0; j < ordem.Length; j++)
+                    resultado[i + ordem[j]] = texto[i + j];
+            }
+
+            return new string(resultado);
         }
     }
 }
